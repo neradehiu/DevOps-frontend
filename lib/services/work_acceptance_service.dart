@@ -10,7 +10,7 @@ class WorkAcceptanceService {
   // 🔧 BASE_URL động theo môi trường
   static const String baseHost = String.fromEnvironment(
     'BASE_URL',
-    defaultValue: 'http://159.65.0.228:8080',
+    defaultValue: 'http://165.22.55.126:8080',
   );
   static String get baseUrl => '$baseHost/api/works';
 
