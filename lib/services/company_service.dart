@@ -2,17 +2,15 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
+import '../config/api_config.dart';
 
 class CompanyService {
   static const _storage = FlutterSecureStorage();
 
-  // 🔧 BASE_URL động theo môi trường
-  static const String baseHost = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: 'http://165.22.55.126:8080',
-  );
-  static String get baseUrl => '$baseHost/api/companies';
+  // ✅ Đường dẫn đến endpoint company
+  static String get _endpoint => "$baseUrl/companies";
 
+  // 🔒 Lấy header có token + thông tin từ JWT
   static Future<Map<String, String>> _getAuthHeaders() async {
     final token = await _storage.read(key: 'token');
     if (token == null) {
@@ -36,6 +34,7 @@ class CompanyService {
     };
   }
 
+  // 🏢 Tạo công ty
   static Future<Map<String, dynamic>> createCompany({
     required String name,
     required String descriptionCompany,
@@ -45,7 +44,7 @@ class CompanyService {
     final headers = await _getAuthHeaders();
 
     final response = await http.post(
-      Uri.parse(baseUrl),
+      Uri.parse(_endpoint),
       headers: headers,
       body: jsonEncode({
         'name': name,
@@ -65,11 +64,12 @@ class CompanyService {
     }
   }
 
+  // 👤 Lấy danh sách công ty của mình
   static Future<List<Map<String, dynamic>>> getMyCompanies() async {
     final headers = await _getAuthHeaders();
 
     final response = await http.get(
-      Uri.parse('$baseUrl/my'),
+      Uri.parse('$_endpoint/my'),
       headers: headers,
     );
 
@@ -84,11 +84,12 @@ class CompanyService {
     }
   }
 
+  // 🌍 Lấy tất cả công ty (admin/manager)
   static Future<List<Map<String, dynamic>>> getAllCompanies() async {
     final headers = await _getAuthHeaders();
 
     final response = await http.get(
-      Uri.parse(baseUrl),
+      Uri.parse(_endpoint),
       headers: headers,
     );
 
@@ -103,11 +104,12 @@ class CompanyService {
     }
   }
 
+  // 🔍 Lấy công ty theo ID
   static Future<Map<String, dynamic>> getCompanyById(int id) async {
     final headers = await _getAuthHeaders();
 
     final response = await http.get(
-      Uri.parse('$baseUrl/$id'),
+      Uri.parse('$_endpoint/$id'),
       headers: headers,
     );
 
@@ -121,6 +123,7 @@ class CompanyService {
     }
   }
 
+  // ✏️ Cập nhật công ty
   static Future<Map<String, dynamic>> updateCompany({
     required int id,
     required String name,
@@ -131,7 +134,7 @@ class CompanyService {
     final headers = await _getAuthHeaders();
 
     final response = await http.put(
-      Uri.parse('$baseUrl/$id'),
+      Uri.parse('$_endpoint/$id'),
       headers: headers,
       body: jsonEncode({
         'name': name,
@@ -151,11 +154,12 @@ class CompanyService {
     }
   }
 
+  // ❌ Xóa công ty
   static Future<void> deleteCompany(int id) async {
     final headers = await _getAuthHeaders();
 
     final response = await http.delete(
-      Uri.parse('$baseUrl/$id'),
+      Uri.parse('$_endpoint/$id'),
       headers: headers,
     );
 

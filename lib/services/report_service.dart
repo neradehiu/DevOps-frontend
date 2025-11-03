@@ -1,18 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/api_config.dart'; // ✅ import cấu hình baseUrl
 
 class ReportService {
   static final _storage = FlutterSecureStorage();
 
-  // 🔧 BASE_URL động theo môi trường
-  static const String baseHost = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: 'http://165.22.55.126:8080',
-  );
-  static String get baseUrl => '$baseHost/api/reports';
+  // 🔧 Dùng baseUrl từ file cấu hình chung
+  static String get reportUrl => '$baseUrl/reports';
 
-  // Lấy headers chứa token & username
+  // 📦 Hàm lấy headers có token + username
   static Future<Map<String, String>> _getHeaders() async {
     final token = await _storage.read(key: 'token');
     final username = await _storage.read(key: 'username');
@@ -28,12 +25,12 @@ class ReportService {
     };
   }
 
-  /// Gửi báo cáo người dùng
+  /// 📤 Gửi báo cáo người dùng
   static Future<bool> reportUser({
     required int reportedAccountId,
     required String reason,
   }) async {
-    final url = Uri.parse(baseUrl);
+    final url = Uri.parse(reportUrl);
     final headers = await _getHeaders();
     final body = jsonEncode({
       'reportedAccountId': reportedAccountId,
@@ -50,9 +47,9 @@ class ReportService {
     }
   }
 
-  /// Lấy danh sách báo cáo chưa xử lý (chỉ ADMIN)
+  /// 📋 Lấy danh sách báo cáo chưa xử lý (chỉ ADMIN)
   static Future<List<Map<String, dynamic>>> getUnresolvedReports() async {
-    final url = Uri.parse('$baseUrl/unresolved');
+    final url = Uri.parse('$reportUrl/unresolved');
     final headers = await _getHeaders();
 
     final response = await http.get(url, headers: headers);

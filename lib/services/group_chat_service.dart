@@ -4,6 +4,7 @@ import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart'; // ✅ import baseUrl & wsPath
 
 class GroupChatService {
   final _storage = const FlutterSecureStorage();
@@ -16,14 +17,11 @@ class GroupChatService {
 
   List<Map<String, dynamic>> get messages => _messages;
 
-  // 🔧 BASE_URL động theo môi trường
-  static const String baseHost = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: 'http://165.22.55.126:8080',
-  );
-  String get wsUrl => '$baseHost/ws';
-  String get apiUrl => '$baseHost/api/chat';
+  // ✅ Dùng baseUrl tương đối — thích hợp khi Flutter Web & Backend chung domain
+  String get wsUrl => "$wsPath";
+  String get apiUrl => "$baseUrl/chat";
 
+  /// 🔌 Kết nối WebSocket
   Future<void> connect({
     required Function(Map<String, dynamic>) onMessageReceived,
     Function()? onConnect,
@@ -76,6 +74,7 @@ class GroupChatService {
     _stompClient?.activate();
   }
 
+  /// 🔄 Cập nhật danh sách tin nhắn
   void updateMessage(Map<String, dynamic> data, Function(Map<String, dynamic>) callback) {
     final existingIndex = _messages.indexWhere((m) => m['id'] == data['id']);
     if (existingIndex != -1) {
@@ -86,6 +85,7 @@ class GroupChatService {
     callback(data);
   }
 
+  /// 💬 Gửi tin nhắn nhóm
   void sendGroupMessage(String content) {
     if (!_isConnected || _stompClient == null) {
       print('⚠️ Không thể gửi: WebSocket chưa kết nối');
@@ -101,6 +101,7 @@ class GroupChatService {
     );
   }
 
+  /// 👁️ Đánh dấu đã đọc qua WebSocket
   void markAsReadWebSocket(int messageId) {
     if (!_isConnected || _stompClient == null) {
       print('⚠️ Không thể markRead: WS chưa kết nối');
@@ -115,6 +116,7 @@ class GroupChatService {
     );
   }
 
+  /// ✅ Đánh dấu đã đọc qua REST API (fallback)
   Future<void> markAsReadRest(int messageId) async {
     final url = Uri.parse('$apiUrl/mark-read/$messageId');
     final response = await http.put(
@@ -132,6 +134,7 @@ class GroupChatService {
     }
   }
 
+  /// 👋 Ngắt kết nối WS
   void disconnect() {
     _stompClient?.deactivate();
     _isConnected = false;

@@ -4,6 +4,7 @@ import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart'; // ✅ Import baseUrl & wsPath
 
 class PrivateChatService {
   final _storage = const FlutterSecureStorage();
@@ -16,15 +17,11 @@ class PrivateChatService {
 
   List<Map<String, dynamic>> get messages => _messages;
 
-  // 🔧 BASE_URL động theo môi trường
-  static const String baseHost = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: 'http://165.22.55.126:8080',
-  );
+  // ✅ Dùng URL tương đối để hoạt động tốt qua Nginx proxy
+  String get wsUrl => wsPath;
+  String get apiUrl => "$baseUrl/chat";
 
-  String get restBaseUrl => '$baseHost/api/chat';
-  String get wsUrl => '$baseHost/ws';
-
+  /// 🔌 Kết nối WebSocket riêng tư
   Future<void> connect({
     required Function(Map<String, dynamic>) onMessageReceived,
     Function()? onConnect,
@@ -73,7 +70,7 @@ class PrivateChatService {
             },
           );
 
-          print('🌀 Subscribed to /user/{_username}/queue/messages');
+          print('🌀 Subscribed to /user/${_username}/queue/messages');
           onConnect?.call();
         },
         beforeConnect: () async {
@@ -92,6 +89,7 @@ class PrivateChatService {
     _stompClient?.activate();
   }
 
+  /// 🔄 Cập nhật danh sách tin nhắn
   void updateMessage(Map<String, dynamic> data, Function(Map<String, dynamic>) cb) {
     final idx = _messages.indexWhere((m) => m['id'] == data['id']);
     if (idx != -1) {
@@ -102,6 +100,7 @@ class PrivateChatService {
     cb(data);
   }
 
+  /// 💬 Gửi tin nhắn riêng tư
   void sendPrivateMessage(String content, String receiverUsername) {
     if (!_isConnected || _stompClient == null) {
       print('⚠️ Không thể gửi: WebSocket chưa kết nối');
@@ -122,6 +121,7 @@ class PrivateChatService {
     );
   }
 
+  /// 👁️ Đánh dấu đã đọc qua WebSocket
   void markAsReadWebSocket(int messageId) {
     if (!_isConnected || _stompClient == null) {
       print('⚠️ Không thể markRead: WS chưa kết nối');
@@ -137,11 +137,12 @@ class PrivateChatService {
     );
   }
 
+  /// ✅ Đánh dấu đã đọc qua REST API
   Future<void> markAsReadRest(int messageId) async {
-    final String? token = await _storage.read(key: 'token');
+    final token = await _storage.read(key: 'token');
     if (token == null) return;
 
-    final url = Uri.parse('$restBaseUrl/mark-read/$messageId');
+    final url = Uri.parse('$apiUrl/mark-read/$messageId');
     final response = await http.put(
       url,
       headers: {
@@ -157,13 +158,13 @@ class PrivateChatService {
     }
   }
 
+  /// 🕓 Lấy lịch sử tin nhắn riêng tư
   Future<List<Map<String, dynamic>>> fetchPrivateMessageHistory(
       String receiverUsername) async {
-    final String? token = await _storage.read(key: 'token');
+    final token = await _storage.read(key: 'token');
     if (token == null) return [];
 
-    final url = Uri.parse(
-        '$restBaseUrl/chat/history/private?user=$receiverUsername&limit=50');
+    final url = Uri.parse('$apiUrl/chat/history/private?user=$receiverUsername&limit=50');
     final response = await http.get(
       url,
       headers: {
@@ -181,12 +182,13 @@ class PrivateChatService {
     }
   }
 
+  /// 📬 Lấy danh sách người gửi riêng tư
   Future<List<String>> getPrivateSenders(String myUsername) async {
-    final String? token = await _storage.read(key: 'token');
+    final token = await _storage.read(key: 'token');
     if (token == null) return [];
 
     final encodedUsername = Uri.encodeComponent(myUsername);
-    final uri = Uri.parse('$restBaseUrl/chat/private/inbox?myUsername=$encodedUsername');
+    final uri = Uri.parse('$apiUrl/chat/private/inbox?myUsername=$encodedUsername');
 
     final response = await http.get(uri, headers: {
       'Authorization': 'Bearer $token',
@@ -197,12 +199,12 @@ class PrivateChatService {
       final List<dynamic> data = jsonDecode(response.body);
       return data.cast<String>();
     } else {
-      print(
-          "❌ Lỗi khi lấy danh sách người gửi: ${response.statusCode} - ${response.body}");
+      print("❌ Lỗi khi lấy danh sách người gửi: ${response.statusCode} - ${response.body}");
       return [];
     }
   }
 
+  /// 🔌 Ngắt kết nối WS
   void disconnect() {
     _stompClient?.deactivate();
     _isConnected = false;
