@@ -8,7 +8,7 @@ import '../config/api_config.dart';
 class AuthService {
   static const storage = FlutterSecureStorage();
 
-  // ✅ Sử dụng baseUrl thống nhất từ api_config.dart
+  // ✅ Dùng baseUrl thống nhất từ api_config.dart
   static const String basePath = "$baseUrl/auth";
 
   // ---------------------- 🧾 REGISTER ----------------------
@@ -44,6 +44,12 @@ class AuthService {
       );
 
       print('📩 [LOGIN] ${response.statusCode} - ${response.body}');
+
+      // ✅ Kiểm tra nếu server không trả JSON (ví dụ HTML)
+      if (response.headers['content-type']?.contains('application/json') == false) {
+        print('⚠️ Server trả về không phải JSON: ${response.body}');
+        return 'Phản hồi không hợp lệ từ máy chủ.';
+      }
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
