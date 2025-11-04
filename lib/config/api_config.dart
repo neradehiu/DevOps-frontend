@@ -1,6 +1,6 @@
 const String baseHost = String.fromEnvironment(
   'BASE_URL',
-  defaultValue: 'http://165.22.55.126:8080',
+  defaultValue: 'http://165.22.55.126',
 );
 
 const String apiPath = "/api";
