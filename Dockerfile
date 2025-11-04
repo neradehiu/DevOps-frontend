@@ -26,8 +26,8 @@ RUN flutter config --enable-web
 #  Nhận các biến môi trường khi build
 # =========================
 # Sử dụng giá trị mặc định nếu không được truyền vào
-ARG BASE_URL=http://165.22.55.126/api
-ARG WS_URL=ws://165.22.55.126/ws
+ARG BASE_URL=http://backend-fwfe:8080/api
+ARG WS_URL=ws://backend-fwfe:8080/ws
 
 # Build Flutter Web (release) và nhúng biến môi trường vào app
 RUN flutter build web --release \
