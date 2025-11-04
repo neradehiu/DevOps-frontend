@@ -22,13 +22,13 @@ COPY . .
 RUN flutter config --enable-web
 
 # =========================
-# Nhận các biến môi trường truyền từ bên ngoài Docker build
+# Nhận các biến môi trường truyền từ Docker build
 # =========================
-ARG BASE_URL
-ARG WS_URL
+# (Có thể truyền khi build hoặc định nghĩa trong docker-compose.yml)
+ARG BASE_URL=http://backend-fwfe:8080
+ARG WS_URL=ws://backend-fwfe:8080/ws
 
-# Build Flutter Web (release)
-# Nhúng giá trị API & WebSocket URL vào app
+# Build Flutter Web (release) và nhúng các biến môi trường vào app
 RUN flutter build web --release \
     --dart-define=BASE_URL=${BASE_URL} \
     --dart-define=WS_URL=${WS_URL}
@@ -41,7 +41,7 @@ FROM nginx:stable-alpine
 # Xóa cấu hình default của Nginx để tránh xung đột
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Sao chép cấu hình nginx tùy chỉnh từ dự án (nếu có)
+# Sao chép cấu hình nginx tùy chỉnh từ dự án
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Sao chép Flutter web build từ stage trước
