@@ -8,7 +8,6 @@ import '../config/api_config.dart';
 class AuthService {
   static const storage = FlutterSecureStorage();
 
-  // ✅ Dùng baseUrl thống nhất từ api_config.dart
   static const String basePath = "$baseUrl/auth";
 
   // ---------------------- 🧾 REGISTER ----------------------
