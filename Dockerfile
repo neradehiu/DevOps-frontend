@@ -3,8 +3,9 @@
 # =========================
 FROM debian:stable-slim AS build
 
-# Cài đặt dependencies cần thiết
-RUN apt-get update && apt-get install -y curl git unzip xz-utils zip libglu1-mesa chromium && \
+# Cài đặt dependencies cần thiết cho Flutter
+RUN apt-get update && apt-get install -y \
+    curl git unzip xz-utils zip libglu1-mesa chromium && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Cài đặt Flutter SDK
@@ -14,7 +15,7 @@ ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PAT
 # Kiểm tra Flutter đã cài thành công
 RUN flutter --version
 
-# Sao chép toàn bộ mã nguồn vào container
+# Sao chép mã nguồn vào container
 WORKDIR /app
 COPY . .
 
@@ -22,13 +23,13 @@ COPY . .
 RUN flutter config --enable-web
 
 # =========================
-# Nhận các biến môi trường truyền từ Docker build
+#  Nhận các biến môi trường khi build
 # =========================
-# (Có thể truyền khi build hoặc định nghĩa trong docker-compose.yml)
-ARG BASE_URL=http://backend-fwfe:8080
-ARG WS_URL=ws://backend-fwfe:8080/ws
+# Sử dụng giá trị mặc định nếu không được truyền vào
+ARG BASE_URL=http://165.22.55.126/api
+ARG WS_URL=ws://165.22.55.126/ws
 
-# Build Flutter Web (release) và nhúng các biến môi trường vào app
+# Build Flutter Web (release) và nhúng biến môi trường vào app
 RUN flutter build web --release \
     --dart-define=BASE_URL=${BASE_URL} \
     --dart-define=WS_URL=${WS_URL}
@@ -41,14 +42,14 @@ FROM nginx:stable-alpine
 # Xóa cấu hình default của Nginx để tránh xung đột
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Sao chép cấu hình nginx tùy chỉnh từ dự án
+# Sao chép file cấu hình Nginx tùy chỉnh
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Sao chép Flutter web build từ stage trước
+# Sao chép build Flutter Web từ stage trước
 COPY --from=build /app/build/web /usr/share/nginx/html
 
-# Expose cổng 80
+# Mở cổng 80 để phục vụ web
 EXPOSE 80
 
-# Chạy nginx ở foreground
+# Chạy Nginx ở foreground
 CMD ["nginx", "-g", "daemon off;"]
